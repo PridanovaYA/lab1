@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 
-def get_channel(image, channel):
+def get_channel_rgb(image, channel):
     b, g, r = cv2.split(image)
     if channel == 'blue':
         return b
@@ -10,8 +10,16 @@ def get_channel(image, channel):
         return g
     if channel == 'red':
         return r
+
+def get_channel_cmy(image, channel):
+    b, g, r = cv2.split(image)
     if channel == 'cyan':
         return 1 - r
+    if channel == 'magenta':
+        return 1 - g
+    if channel == 'yellow':
+        return 1 - b
+
 
 
 def get_plane(channel_image, plane_num):
@@ -22,15 +30,15 @@ def encode_svi1(image, watermark, channel_color, bit_num):
     num_for_clear_bit_plate = 255 - (2 ** (bit_num - 1))
 
     prepared_watermark = ((watermark / 255) * (2 ** (bit_num - 1))).astype(np.uint8)
-    watermark_channel = get_channel(prepared_watermark, channel_color)
+    watermark_channel = get_channel_rgb(prepared_watermark, channel_color)
 
-    image_with_empty_bit = get_channel(image, channel_color) & num_for_clear_bit_plate
+    image_with_empty_bit = get_channel_rgb(image, channel_color) & num_for_clear_bit_plate
 
     result_image = image_with_empty_bit | watermark_channel
 
-    r = get_channel(baboon, 'red')
-    g = get_channel(baboon, 'green')
-    b = get_channel(baboon, 'blue')
+    r = get_channel_rgb(baboon, 'red')
+    g = get_channel_rgb(baboon, 'green')
+    b = get_channel_rgb(baboon, 'blue')
 
     if channel_color == 'blue':
         return cv2.merge([result_image, g, r])
@@ -41,7 +49,7 @@ def encode_svi1(image, watermark, channel_color, bit_num):
 
 
 def decode_svi1(encoded_image, channel_color, bit_num):
-    encoded_image_channel = get_channel(encoded_image, channel_color)
+    encoded_image_channel = get_channel_rgb(encoded_image, channel_color)
     return get_plane(encoded_image_channel, bit_num)
 
 
@@ -51,7 +59,7 @@ def encode_svi4(image, watermark, channel_color, delta):
     #cv2.randn(noise, 0, delta - 1)
     cv2.imshow("Noise", noise)
 
-    extracted_channel = get_channel(image, channel_color)
+    extracted_channel = get_channel (image, channel_color)
     noise = extracted_channel % delta
     cv2.imshow("Noise", noise)
     binary_watermark = get_channel(watermark, channel_color)
