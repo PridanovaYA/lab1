@@ -28,9 +28,9 @@ def encode_svi1(image, watermark, channel_color, bit_num):
 
     result_image = image_with_empty_bit | watermark_channel
 
-    r = get_channel(baboon_image, 'red')
-    g = get_channel(baboon_image, 'green')
-    b = get_channel(baboon_image, 'blue')
+    r = get_channel(baboon, 'red')
+    g = get_channel(baboon, 'green')
+    b = get_channel(baboon, 'blue')
 
     if channel_color == 'blue':
         return cv2.merge([result_image, g, r])
@@ -53,6 +53,7 @@ def encode_svi4(image, watermark, channel_color, delta):
 
     extracted_channel = get_channel(image, channel_color)
     noise = extracted_channel % delta
+    cv2.imshow("Noise", noise)
     binary_watermark = get_channel(watermark, channel_color)
 
     changed_channel = (extracted_channel // (2 * delta) * (2 * delta)) + binary_watermark * delta + noise # 3.10
@@ -77,14 +78,14 @@ def decode_svi4(encoded_image, original_image, noise, channel_color, delta):
 
 
 if __name__ == '__main__':
-    baboon_image = cv2.imread('baboon.tif')
+    baboon = cv2.imread('baboon.tif')
     ornament = cv2.imread('ornament.tif')
-    cv2.imshow("Original", baboon_image)
+    cv2.imshow("Original", baboon)
 
-    svi_1_result = encode_svi1(baboon_image, ornament, 'green', 2)
+    svi_1_result = encode_svi1(baboon, ornament, 'green', 2)
     svi_1_decode = decode_svi1(svi_1_result, 'blue', 1)
 
-    cv2.imshow("Original", baboon_image)
+    cv2.imshow("Original", baboon)
     cv2.imshow("SVI-1 Encoded", svi_1_result)
     cv2.imshow("SVI-1 Decoded", svi_1_decode)
 
@@ -92,10 +93,10 @@ if __name__ == '__main__':
     VAR = 6
     DELTA = 4 + (4 * VAR) % 3
 
-    result_noise, svi_4_result = encode_svi4(baboon_image, ornament, 'cyan', DELTA)
-    svi_4_decode = decode_svi4(svi_4_result, baboon_image, result_noise, 'cyan', DELTA)
+    result_noise, svi_4_result = encode_svi4(baboon, ornament, 'cyan', DELTA)
+    svi_4_decode = decode_svi4(svi_4_result, baboon, result_noise, 'cyan', DELTA)
 
-    cv2.imshow("Original", baboon_image)
+    cv2.imshow("Original", baboon)
     cv2.imshow("SVI-4 Encoded", svi_4_result)
     cv2.imshow("SVI-4 Decoded", svi_4_decode)
 
