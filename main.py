@@ -69,6 +69,8 @@ def encode_svi4(image, watermark, channel_color, delta):
         return noise, cv2.merge([b, g, changed_channel])
     if channel_color == 'green':
         return noise, cv2.merge([b, changed_channel, r])
+    if channel_color == 'cyan':
+        return noise, cv2.merge([b, g, changed_channel])
 
 
 def decode_svi4(encoded_image, original_image, noise, channel_color, delta):
