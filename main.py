@@ -11,6 +11,7 @@ def get_channel_rgb(image, channel):
     if channel == 'red':
         return r
 
+
 def get_channel_cmy(image, channel):
     b, g, r = cv2.split(image)
     if channel == 'cyan':
@@ -19,7 +20,6 @@ def get_channel_cmy(image, channel):
         return 1 - g
     if channel == 'yellow':
         return 1 - b
-
 
 
 def get_plane(channel_image, plane_num):
@@ -79,7 +79,6 @@ def encode_svi4(image, watermark, channel_color, delta):
         return noise, cv2.merge([c, m, changed_channel])
     if channel_color == 'magenta':
         return noise, cv2.merge([c, changed_channel, y])
-
 
 
 def decode_svi4(encoded_image, original_image, noise, channel_color, delta):
