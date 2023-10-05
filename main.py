@@ -49,7 +49,7 @@ def encode_svi1(image, watermark, channel_color, bit_num):
     if channel_color == 'red':
         return cv2.merge([b, g, result_image])
     if channel_color == 'green':
-        return cv2.merge([r, result_image, b])
+        return cv2.merge([b, result_image, r])
 
 
 def decode_svi1(image, encoded_image, channel_color, bit_num):
