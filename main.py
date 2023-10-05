@@ -31,7 +31,7 @@ def encode_svi1(image, watermark, channel_color, bit_num):
 
     prepared_watermark = ((watermark) * (2 ** (bit_num - 1))).astype(np.uint8)
     watermark_channel = get_channel_rgb(prepared_watermark, channel_color)
-    #cv2.imshow("test",  watermark_channel)
+    cv2.imshow("test",  watermark_channel)
     prepared_image = (image * (2 ** (bit_num - 1))).astype(np.uint8)
     #cv2.imshow("test_2", prepared_image)
     prepared_image_channel = get_channel_rgb(prepared_image, channel_color)
