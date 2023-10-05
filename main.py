@@ -29,12 +29,16 @@ def get_plane(channel_image, plane_num):
 def encode_svi1(image, watermark, channel_color, bit_num):
     # num_for_clear_bit_plate = 255 - (2 ** (bit_num - 1))
 
-    prepared_watermark = (watermark * (2 ** (bit_num - 1))).astype(np.uint8)
+    prepared_watermark = ((watermark) * (2 ** (bit_num - 1))).astype(np.uint8)
     watermark_channel = get_channel_rgb(prepared_watermark, channel_color)
-    cv2.imshow("test",  watermark_channel)
+    #cv2.imshow("test",  watermark_channel)
     prepared_image = (image * (2 ** (bit_num - 1))).astype(np.uint8)
+    #cv2.imshow("test_2", prepared_image)
+    prepared_image_channel = get_channel_rgb(prepared_image, channel_color)
+    #cv2.imshow("test_3", prepared_image_channel)
     # image_with_empty_bit = get_channel_rgb(image, channel_color) & num_for_clear_bit_plate # очищаем нужную битовую плоскость
-    result_image = get_channel_rgb(prepared_image, channel_color) | watermark_channel  # 3.4
+    result_image = prepared_image_channel | watermark_channel  # 3.4
+    #cv2.imshow("test_4", result_image)
 
     r = get_channel_rgb(baboon, 'red')
     g = get_channel_rgb(baboon, 'green')
@@ -45,7 +49,7 @@ def encode_svi1(image, watermark, channel_color, bit_num):
     if channel_color == 'red':
         return cv2.merge([b, g, result_image])
     if channel_color == 'green':
-        return cv2.merge([b, result_image, r])
+        return cv2.merge([r, result_image, b])
 
 
 def decode_svi1(image, encoded_image, channel_color, bit_num):
