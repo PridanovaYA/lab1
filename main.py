@@ -59,31 +59,32 @@ def encode_svi4(image, watermark, channel_color, delta):
     #cv2.randn(noise, 0, delta - 1)
     cv2.imshow("Noise", noise)
 
-    extracted_channel = get_channel (image, channel_color)
+    extracted_channel = get_channel_cmy(image, channel_color)
     noise = extracted_channel % delta
     cv2.imshow("Noise", noise)
-    binary_watermark = get_channel(watermark, channel_color)
+    binary_watermark = get_channel_cmy(watermark, channel_color)
 
     changed_channel = (extracted_channel // (2 * delta) * (2 * delta)) + binary_watermark * delta + noise # 3.10
 
-    r = get_channel(image, 'red')
-    g = get_channel(image, 'green')
-    b = get_channel(image, 'blue')
-    c = get_channel(image, 'cyan')
+    #r = get_channel(image, 'red')
+    #g = get_channel(image, 'green')
+    #b = get_channel(image, 'blue')
+    c = get_channel_cmy(image, 'cyan')
+    m = get_channel_cmy(image, 'magenta')
+    y = get_channel_cmy(image, 'yellow')
 
-    if channel_color == 'blue':
-        return noise, cv2.merge([changed_channel, g, r])
-    if channel_color == 'red':
-        return noise, cv2.merge([b, g, changed_channel])
-    if channel_color == 'green':
-        return noise, cv2.merge([b, changed_channel, r])
     if channel_color == 'cyan':
-        return noise, cv2.merge([b, g, changed_channel])
+        return noise, cv2.merge([changed_channel, m, y])
+    if channel_color == 'yellow':
+        return noise, cv2.merge([c, m, changed_channel])
+    if channel_color == 'magenta':
+        return noise, cv2.merge([c, changed_channel, y])
+
 
 
 def decode_svi4(encoded_image, original_image, noise, channel_color, delta):
-    encoded_image_channel = get_channel(encoded_image, channel_color)
-    original_image_channel = get_channel(original_image, channel_color)
+    encoded_image_channel = get_channel_cmy(encoded_image, channel_color)
+    original_image_channel = get_channel_cmy(original_image, channel_color)
     return (encoded_image_channel - noise - (original_image_channel // (2 * delta) * 2 * delta)) / delta
 
 
