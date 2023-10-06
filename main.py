@@ -15,36 +15,21 @@ def get_channel_rgb(image, channel):
 
 
 def get_channel_cmy(image, channel):
-    #b, g, r = cv2.split(image)
-    img = image.astype(np.float64) / 255.
-    K = 1 - np.max(img, axis=2)
+    b, g, r = cv2.split(image)
     if channel == 'cyan':
-       C = (1 - img[..., 2] - K) / (1 - K)
-       return C
+        return 255 - r
     if channel == 'magenta':
-        M = (1 - img[..., 1] - K) / (1 - K)
-        return M
+        return 255 - g
     if channel == 'yellow':
-        Y = (1 - img[..., 0] - K) / (1 - K)
-        return Y
-
-
-
-def get_plane(channel_image, plane_num):
-    return channel_image | (2 ** (plane_num - 1))
+        return 255 - b
 
 
 def encode_svi1(image, watermark, channel_color, bit_num):
-    # num_for_clear_bit_plate = 255 - (2 ** (bit_num - 1))
-
     prepared_watermark = (watermark * (2 ** (bit_num - 1))).astype(np.uint8)
     watermark_channel = get_channel_rgb(prepared_watermark, channel_color)
-    # cv2.imshow("watermark",  watermark_channel)
-    # prepared_image = (image * (2 ** (bit_num - 1))).astype(np.uint8)
     #cv2.imshow("test_2", prepared_image)
     prepared_image_channel = get_channel_rgb(image, channel_color)
-    #cv2.imshow("test_3", prepared_image_channel)
-    # image_with_empty_bit = get_channel_rgb(image, channel_color) & num_for_clear_bit_plate # очищаем нужную битовую плоскость
+    #cv2.imshow("test_3", prepared_image_channel
     result_image = (prepared_image_channel + watermark_channel) # 3.4
     # cv2.imshow("test_4", result_image)
 
@@ -86,38 +71,42 @@ def decode_svi1(image, encoded_image, channel_color, bit_num):
 
 
 def encode_svi4(image, watermark, channel_color, delta):
-    h, w, channels = image.shape
-    # noise = np.empty((h, w), dtype="uint8")
-    # cv2.randn(noise, 0, delta - 1)
-    # cv2.imshow("Noise", noise)
-
     extracted_channel = get_channel_cmy(image, channel_color)
     noise = extracted_channel % delta
     # cv2.imshow("Noise", noise * 255)
     binary_watermark = get_channel_cmy(watermark, channel_color)
-    changed_channel = (extracted_channel // (2 * delta) * (2 * delta)) + binary_watermark * delta + noise  # 3.10
+    changed_channel = (extracted_channel // (2 * delta) * (2 * delta)) + binary_watermark * delta + noise  # 3.13
 
-    # r = get_channel(image, 'red')
-    # g = get_channel(image, 'green')
-    # b = get_channel(image, 'blue')
-    img_1 = image.astype(np.float64) / 255.
-    K = 1 - np.max(img_1, axis=2)
-    C = get_channel_cmy(image, 'cyan')
-    M = get_channel_cmy(image, 'magenta')
-    Y = get_channel_cmy(image, 'yellow')
+    c = get_channel_cmy(image, 'cyan')
+    m = get_channel_cmy(image, 'magenta')
+    y = get_channel_cmy(image, 'yellow')
 
     if channel_color == 'cyan':
-        return noise, (np.dstack((changed_channel,M,Y,K)) * 255).astype(np.uint8)
+        return noise, cv2.merge([changed_channel, m, y])
     if channel_color == 'yellow':
-        return noise, cv2.merge([C, M, changed_channel])
+        return noise, cv2.merge([c, m, changed_channel])
     if channel_color == 'magenta':
-        return noise, cv2.merge([C, changed_channel, Y])
+        return noise, cv2.merge([c, changed_channel, y])
 
 
 def decode_svi4(encoded_image, original_image, noise, channel_color, delta):
     encoded_image_channel = get_channel_cmy(encoded_image, channel_color)
     original_image_channel = get_channel_cmy(original_image, channel_color)
-    return (encoded_image_channel - noise - (original_image_channel // (2 * delta) * 2 * delta)) / delta
+    result_image = (encoded_image_channel - (original_image_channel // (2 * delta) * (2 * delta)))
+    watermark = result_image // delta
+    # cv2.imshow("watermark", watermark * 255)
+
+    result_image = encoded_image_channel - watermark * delta
+    c = get_channel_cmy(encoded_image, 'cyan')
+    m = get_channel_cmy(encoded_image, 'magenta')
+    y = get_channel_cmy(encoded_image, 'yellow')
+
+    if channel_color == 'cyan':
+        return watermark, cv2.merge([result_image, m, y])
+    if channel_color == 'yellow':
+        return watermark, cv2.merge([c, m, result_image])
+    if channel_color == 'magenta':
+        return watermark, cv2.merge([c, result_image, y])
 
 
 def print_images(first, second, third, titles):
@@ -144,30 +133,50 @@ if __name__ == '__main__':
     mickey = cv2.imread('mickey.tif')
     # cv2.imshow("Original", baboon)
 
-    svi_1_result = encode_svi1(baboon, ornament, 'green', 2)
-    print_images(baboon, ornament, svi_1_result, ['встраивание 1', 'контейнер', 'цвз', 'результат'])
+    # svi_1_result = encode_svi1(baboon, ornament, 'green', 2)
+    # print_images(baboon, ornament, svi_1_result, ['встраивание 1', 'контейнер', 'цвз', 'результат'])
     #
-    svi_1_result = encode_svi1(svi_1_result, mickey, 'blue', 1)
-    print_images(baboon, mickey, svi_1_result, ['встраивание 2', 'контейнер', 'цвз', 'результат'])
+    # svi_1_result = encode_svi1(svi_1_result, mickey, 'blue', 1)
+    # print_images(baboon, mickey, svi_1_result, ['встраивание 2', 'контейнер', 'цвз', 'результат'])
     #
-    watermark_1, svi_1_decode_1 = decode_svi1(baboon, svi_1_result, 'green', 2)
-    print_images(baboon, watermark_1, svi_1_decode_1, ['извлечение 1', 'контейнер', 'цвз', 'результат'])
+    # watermark_1, svi_1_decode_1 = decode_svi1(baboon, svi_1_result, 'green', 2)
+    # print_images(baboon, watermark_1, svi_1_decode_1, ['извлечение 1', 'контейнер', 'цвз', 'результат'])
     #
-    watermark_2, svi_1_decode_2 = decode_svi1(baboon, svi_1_result, 'blue', 1)
-    print_images(baboon, watermark_2, svi_1_decode_2, ['извлечение 2', 'контейнер', 'цвз', 'результат'])
+    # watermark_2, svi_1_decode_2 = decode_svi1(baboon, svi_1_result, 'blue', 1)
+    # print_images(baboon, watermark_2, svi_1_decode_2, ['извлечение 2', 'контейнер', 'цвз', 'результат'])
 
-
-    cv2.waitKey(0)
     VAR = 6
     DELTA = 4 + (4 * VAR) % 3
 
-    result_noise, svi_4_result = encode_svi4(baboon, ornament, 'cyan', DELTA)
-    #print_images(baboon, result_noise * 255, svi_4_result, ['встраивание 3', 'контейнер', 'цвз', 'результат'])
-    svi_4_decode = decode_svi4(svi_4_result, baboon, result_noise, 'cyan', DELTA)
-    #print_images(baboon, result_noise, svi_4_decode, ['извлечение 3', 'контейнер', 'цвз', 'результат'])
+    result_noise, svi_4_result = encode_svi4(baboon, mickey, 'cyan', DELTA)
+    print_images(result_noise * 255, mickey, svi_4_result, ['встраивание 3', 'шум', 'цвз', 'результат'])
 
-    cv2.imshow("Original", baboon)
-    cv2.imshow("SVI-4 Encoded", svi_4_result)
-    cv2.imshow("SVI-4 Decoded", svi_4_decode)
 
-    cv2.waitKey(0)
+
+    c = get_channel_cmy(svi_4_result, 'cyan')
+    m = get_channel_cmy(svi_4_result, 'magenta')
+    y = get_channel_cmy(svi_4_result, 'yellow')
+    exp = cv2.merge([c, m, y])
+
+    watermark, svi_4_decode = decode_svi4(exp, baboon, result_noise, 'cyan', DELTA)
+
+    # c = get_channel_cmy(svi_4_decode, 'cyan')
+    # m = get_channel_cmy(svi_4_decode, 'magenta')
+    # y = get_channel_cmy(svi_4_decode, 'yellow')
+    # tmp = cv2.merge([c, m, y])
+
+    print_images(svi_4_result, watermark, svi_4_decode, ['извлечение 3', 'контейнер', 'цвз', 'результат'])
+
+    tmp = svi_4_result - svi_4_decode
+
+    fig = plt.figure(figsize=(12, 5))
+    fig.add_subplot(1, 3, 1)
+    imshow(cv2.cvtColor(tmp, cv2.COLOR_BGR2RGB))
+    plt.show()
+
+
+    # cv2.imshow("Original", baboon)
+    # cv2.imshow("SVI-4 Encoded", svi_4_result)
+    # cv2.imshow("SVI-4 Decoded", svi_4_decode)
+    # cv2.waitKey(0)
+
